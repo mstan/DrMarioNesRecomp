@@ -1,0 +1,7 @@
+build/
+generated/
+banks/
+ghidra/
+nesrecomp/
+*.nes
+*.NES
