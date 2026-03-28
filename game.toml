@@ -1,0 +1,27 @@
+# Dr. Mario (NES) — NESRecomp configuration
+
+[game]
+name = "Dr. Mario"
+output_prefix = "dr-mario"
+
+[mapper]
+bank_switch = [0xB8D5]
+
+[[inline_dispatch]]
+addr = 0xB8B5
+
+[[inline_pointer]]
+addr = 0xB6CB
+zp = [0x00, 0x01]
+call = true
+
+[[nop_jsr]]
+addr = 0xB754
+
+[[extra_label]]
+addr = 0xB6D1
+bank = 0
+
+[functions]
+fixed = [0xA989, 0x85C7, 0x8889, 0xBE67, 0xDDDC, 0xD435]
+bank0 = [0x8594, 0xB6CB, 0x8D60, 0xA660, 0x85A0, 0x85AC]
