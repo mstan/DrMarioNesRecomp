@@ -5,3 +5,4 @@ ghidra/
 nesrecomp/
 *.nes
 *.NES
+.mcp.json
