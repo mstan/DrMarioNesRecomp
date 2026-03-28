@@ -4,6 +4,7 @@
  */
 #include "game_extras.h"
 #include "nes_runtime.h"
+#include "debug_server.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -17,7 +18,9 @@ uint32_t game_get_expected_crc32(void) { return 0x9735D267u; }
 
 const char *game_get_name(void) { return "Dr. Mario"; }
 
-void game_on_init(void) { }
+void game_on_init(void) {
+    debug_server_init(4370);
+}
 
 void game_on_frame(uint64_t frame_count) { (void)frame_count; }
 
