@@ -1,0 +1,18 @@
+{
+  "function_count": 1790,
+  "dispatch_entry_count": 1789,
+  "smoke": {
+    "frames_run": 600,
+    "dispatch_miss_count": 0,
+    "dispatch_miss_unique": 0,
+    "dispatch_misses": [],
+    "frame_hashes": {
+      "0": "644b46ed",
+      "100": "da667508",
+      "200": "da667508",
+      "300": "da667508",
+      "400": "11c703ac",
+      "500": "11c703ac"
+    }
+  }
+}
