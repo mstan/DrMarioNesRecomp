@@ -14,7 +14,7 @@
     g_cpu.N=((_r>>7)&1); g_cpu.Z=((_r&0xFF)==0)?1:0; \
     g_cpu.V=(~((a)^(b))&((a)^_r)&0x80)?1:0; } while(0)
 #define FLAG_NZC_SUB(r,a,b) do { int16_t _r=(r); g_cpu.C=(_r>=0)?1:0; \
-    g_cpu.N=((_r>>7)&1); g_cpu.Z=((_r&0xFF)==0)?1:0; \
+    g_cpu.N=((_r&0xFF)>>7); g_cpu.Z=((_r&0xFF)==0)?1:0; \
     g_cpu.V=(((a)^(b))&((a)^_r)&0x80)?1:0; } while(0)
 
 /* Forward declarations */
