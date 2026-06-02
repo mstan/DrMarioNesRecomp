@@ -11,7 +11,7 @@ Function coverage and game logic analysis made possible by the [dr-mario-disasse
 
 ## What Works
 
-- Title screen with animated logo
+- Title screen
 - Options menu (level, speed, music type selection)
 - 1-player gameplay with virus placement and pill dropping
 - Palette and CHR bank switching (all 4 CHR ROM banks)
