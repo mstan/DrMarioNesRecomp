@@ -1,7 +1,8 @@
 cmake_minimum_required(VERSION 3.20)
-project(DrMarioRecomp C)
+project(DrMarioRecomp C CXX)
 
 set(CMAKE_C_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 
 set(NESRECOMP_ROOT ${CMAKE_SOURCE_DIR}/nesrecomp)
 
@@ -109,3 +110,7 @@ if(MSVC)
     target_compile_options(DrMarioRecomp PRIVATE /W3 /WX-)
     target_compile_options(DrMarioRecomp PRIVATE /wd4102)
 endif()
+
+# ---- Pre-boot GUI launcher (RmlUi) ----
+include(${NESRECOMP_ROOT}/runner/launcher.cmake)
+nesrecomp_add_launcher(DrMarioRecomp)
