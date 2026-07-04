@@ -119,3 +119,13 @@ This is a **static recompiler**, not an emulator. The original 6502 machine code
 - 2-player mode is untested (keyboard controls for P2 are mapped but gameplay is unverified)
 - Audio may sound slightly faster than original hardware in some configurations
 - Level completion cutscenes and ending sequences are untested
+
+---
+
+<p align="center">
+  <sub><b>R.A.I.D. — Retro AI Development</b> · a Discord for AI-assisted retro reverse-engineering, decomp &amp; recomp</sub>
+</p>
+
+<p align="center">
+  <a href="https://discord.gg/Ad9BwSzctP"><img src=".github/raid-discord.png" alt="Join the Retro AI Development (R.A.I.D.) Discord" width="200"></a>
+</p>
