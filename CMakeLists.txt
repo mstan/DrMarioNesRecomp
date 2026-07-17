@@ -84,7 +84,6 @@ find_package(SDL2 REQUIRED)
 add_executable(DrMarioRecomp
     ${NESRECOMP_RUNNER_SOURCES}
     extras.c
-    recomp_stack.c
     generated/dr-mario_full.c
     generated/dr-mario_dispatch.c
 )
@@ -111,6 +110,10 @@ if(MSVC)
     target_compile_options(DrMarioRecomp PRIVATE /wd4102)
 endif()
 
-# ---- Pre-boot GUI launcher (RmlUi) ----
-include(${NESRECOMP_ROOT}/runner/launcher.cmake)
-nesrecomp_add_launcher(DrMarioRecomp)
+# ---- Pre-boot GUI launcher (recomp-ui / Dear ImGui) ----
+include(${CMAKE_SOURCE_DIR}/recomp-ui/recomp_ui.cmake)
+recomp_target_launcher_ui(DrMarioRecomp BOXART ${CMAKE_SOURCE_DIR}/boxart.tga)
+if(WIN32)
+    # OpenGL for the ImGui GL3 backend (previously via the RmlUi launcher.cmake).
+    target_link_libraries(DrMarioRecomp PRIVATE opengl32)
+endif()
