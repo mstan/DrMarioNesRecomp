@@ -6,3 +6,5 @@ ghidra/
 .mcp.json
 
 nestopia-core
+
+build_ui/
