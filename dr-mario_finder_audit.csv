@@ -1,0 +1,14 @@
+entry_type,addr,bank,status,canonical_addr,canonical_bank
+extra_func,A989,1,MISSING,,
+extra_func,85C7,1,MISSING,,
+extra_func,8889,1,MISSING,,
+extra_func,BE67,1,MISSING,,
+extra_func,DDDC,1,AUTO_DISCOVERED,,
+extra_func,D435,1,DISCOVERABLE_AS_SECONDARY,D3D0,1
+extra_func,8594,0,DISCOVERABLE_AS_SECONDARY,8583,0
+extra_func,B6CB,0,AUTO_DISCOVERED,,
+extra_func,8D60,0,MISSING,,
+extra_func,A660,0,MISSING,,
+extra_func,85A0,0,DISCOVERABLE_AS_SECONDARY,8583,0
+extra_func,85AC,0,DISCOVERABLE_AS_SECONDARY,8583,0
+extra_label,B6D1,0,AUTO_DISCOVERED_AS_STANDALONE,,
