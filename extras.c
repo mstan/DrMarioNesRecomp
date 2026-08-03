@@ -5,6 +5,7 @@
 #include "game_extras.h"
 #include "nes_runtime.h"
 #include "debug_server.h"
+#include "game_voxel.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -20,9 +21,13 @@ const char *game_get_name(void) { return "Dr. Mario"; }
 
 void game_on_init(void) {
     debug_server_init(4370);
+    game_voxel_init();
 }
 
-void game_on_frame(uint64_t frame_count) { (void)frame_count; }
+void game_on_frame(uint64_t frame_count) {
+    (void)frame_count;
+    game_voxel_update();
+}
 
 void game_post_nmi(uint64_t frame_count) { (void)frame_count; }
 
@@ -51,4 +56,6 @@ int game_handle_debug_cmd(const char *cmd, int id, const char *json) {
     return 0;
 }
 
-void game_post_render(uint32_t *framebuf) { (void)framebuf; }
+void game_post_render(uint32_t *framebuf) {
+    game_voxel_post_render(framebuf);
+}

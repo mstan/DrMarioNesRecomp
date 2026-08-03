@@ -65,6 +65,16 @@ Controls are fully configurable via `keybinds.ini`, auto-generated next to the e
 | F7  | Load state |
 | Escape | Quit |
 
+### Experimental 3D Diorama
+
+The launcher exposes an optional `3D Voxel Diorama` package. It gives the
+bottle and settled capsules shallow physical depth while keeping Mario,
+viruses, and moving pieces readable as camera-facing sprite cards. The stock
+ROM is never patched and the package is disabled by default.
+
+With the package enabled, use the numpad to experiment: `8/2` pitch, `4/6`
+yaw, `7/9` roll, `+/-` zoom, `1/3` sprite scale, `0` toggle, and `5` reset.
+
 ## Building from Source
 
 Requires Visual Studio 2022 and CMake 3.20+.

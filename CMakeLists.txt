@@ -10,6 +10,8 @@ set(NESRECOMP_ROOT ${CMAKE_SOURCE_DIR}/nesrecomp)
 # commit is the gitlink recorded in this repo. After cloning run setup.sh/.bat
 # (git submodule update --init) to fetch them at the recorded commits.
 
+set(NESRECOMP_ENABLE_MODS ON CACHE BOOL
+    "Enable package mods for Dr. Mario." FORCE)
 include(${NESRECOMP_ROOT}/runner/runner.cmake)
 
 list(APPEND CMAKE_PREFIX_PATH "${NESRECOMP_ROOT}/runner/external/SDL2/cmake")
@@ -18,6 +20,8 @@ find_package(SDL2 REQUIRED)
 add_executable(DrMarioRecomp
     ${NESRECOMP_RUNNER_SOURCES}
     extras.c
+    game_voxel.c
+    mods/voxel_plugin.c
     generated/dr-mario_full.c
     generated/dr-mario_dispatch.c
 )
@@ -29,6 +33,11 @@ target_include_directories(DrMarioRecomp PRIVATE
 )
 
 target_link_libraries(DrMarioRecomp PRIVATE ${SDL2_LIBRARIES})
+
+target_compile_definitions(DrMarioRecomp PRIVATE
+    NESRECOMP_GAME_ID="dr-mario-nes"
+    NESRECOMP_GAME_ROM_CRC32="9735d267"
+    NESRECOMP_GAME_SDL_EVENT_HOOK=game_voxel_handle_event)
 
 if(WIN32)
     target_link_libraries(DrMarioRecomp PRIVATE ws2_32)
@@ -46,4 +55,12 @@ endif()
 
 # ---- Pre-boot GUI launcher (recomp-ui / Dear ImGui) ----
 include(${CMAKE_SOURCE_DIR}/recomp-ui/recomp_ui.cmake)
-recomp_target_launcher_ui(DrMarioRecomp BOXART ${CMAKE_SOURCE_DIR}/boxart.tga)
+recomp_target_launcher_ui(DrMarioRecomp
+    CONSOLE nes
+    BOXART ${CMAKE_SOURCE_DIR}/boxart.tga)
+
+add_custom_command(TARGET DrMarioRecomp POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${CMAKE_SOURCE_DIR}/mods/preloaded"
+        "$<TARGET_FILE_DIR:DrMarioRecomp>/mods"
+    COMMENT "Staging Dr. Mario's preloaded NES mod packages")
