@@ -129,6 +129,11 @@ This is a **static recompiler**, not an emulator. The original 6502 machine code
 - Audio may sound slightly faster than original hardware in some configurations
 - Level completion cutscenes and ending sequences are untested
 
+## License
+
+PolyForm Noncommercial 1.0.0 — see [`LICENSE`](LICENSE). Third-party
+components retain their own licenses.
+
 ---
 
 <p align="center">
