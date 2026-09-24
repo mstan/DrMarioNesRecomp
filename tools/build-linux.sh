@@ -177,6 +177,13 @@ EOF
 $LINUXDEPLOY --appdir "$APPDIR" --executable "$BIN" \
     --desktop-file "$WORK/$SLUG.desktop" --icon-file "$WORK/$SLUG.png"
 cp -a "$(dirname "$BIN")/assets" "$APPDIR/usr/bin/assets"
+LICENSES="$APPDIR/usr/share/licenses/DrMarioRecomp"
+mkdir -p "$LICENSES"
+cp "$REPO/LICENSE" "$LICENSES/DrMario-LICENSE.txt"
+cp "$REPO/nesrecomp/LICENSE" "$LICENSES/NESRecomp-LICENSE.txt"
+cp "$REPO/nesrecomp/runner/external/SDL2/COPYING.txt" "$LICENSES/SDL2-COPYING.txt"
+cp "$REPO/recomp-ui/src/third_party/imgui/LICENSE.txt" "$LICENSES/ImGui-LICENSE.txt"
+cp "$REPO/nesrecomp/lib/recomp-net/LICENSE" "$LICENSES/recomp-net-LICENSE.txt"
 
 # Custom AppRun: bundle libs, read the controller natively on a Steam Deck, find
 # the ROM next to the .AppImage, run from the ROM's folder so saves land there.

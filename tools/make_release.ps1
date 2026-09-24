@@ -48,6 +48,20 @@ foreach ($variant in $regions) {
   }
   Copy-Item -LiteralPath $sdl -Destination $stage
   Copy-Item -LiteralPath $assets -Destination $stage -Recurse
+  $licenses = Join-Path $stage 'licenses'
+  New-Item -ItemType Directory -Path $licenses | Out-Null
+  $licenseFiles = @{
+    'DrMario-LICENSE.txt' = 'LICENSE'
+    'NESRecomp-LICENSE.txt' = 'nesrecomp/LICENSE'
+    'SDL2-COPYING.txt' = 'nesrecomp/runner/external/SDL2/COPYING.txt'
+    'ImGui-LICENSE.txt' = 'recomp-ui/src/third_party/imgui/LICENSE.txt'
+    'recomp-net-LICENSE.txt' = 'nesrecomp/lib/recomp-net/LICENSE'
+  }
+  foreach ($name in $licenseFiles.Keys) {
+    $source = Join-Path $root $licenseFiles[$name]
+    if (-not (Test-Path -LiteralPath $source)) { throw "Missing license: $source" }
+    Copy-Item -LiteralPath $source -Destination (Join-Path $licenses $name)
+  }
   $crc = if ($variant -eq 'usa') { 'DE581355' } else { '9735D267' }
   @"
 Dr. Mario ($variant) - NESRecomp
