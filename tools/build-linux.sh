@@ -18,6 +18,8 @@
 # Usage:
 #   bash tools/build-linux.sh                 # prod AppImage (default)
 #   bash tools/build-linux.sh --config debug  # debug build (TCP server + rings)
+#   bash tools/build-linux.sh --region eu     # EU AppImage (default: usa)
+#   bash tools/build-all-linux.sh             # build both release AppImages
 #   bash tools/build-linux.sh --regen         # regen src/gen first (tools/regen.sh)
 #   bash tools/build-linux.sh --run           # launch the AppImage after building
 #   bash tools/build-linux.sh --no-package    # configure + build only, skip AppImage
@@ -45,6 +47,7 @@ DEBUG_CMAKE_FLAGS=( -DNESRECOMP_ENABLE_TRACE=ON )
 # ============================================================================
 
 CONFIG="prod"
+REGION="usa"
 DO_REGEN=0
 DO_RUN=0
 DO_PACKAGE=1
@@ -56,6 +59,7 @@ OUT="$REPO/release-linux"
 while [ $# -gt 0 ]; do
   case "$1" in
     --config) CONFIG="$2"; shift 2;;
+    --region) REGION="$2"; shift 2;;
     --prod) CONFIG="prod"; shift;;
     --debug) CONFIG="debug"; shift;;
     --regen) DO_REGEN=1; shift;;
@@ -68,6 +72,10 @@ while [ $# -gt 0 ]; do
     *) echo "unknown arg: $1" >&2; exit 2;;
   esac
 done
+case "$REGION" in usa|eu) ;; *) echo "--region must be usa or eu" >&2; exit 2;; esac
+APP_NAME="DrMario-$REGION"
+PROD_CMAKE_FLAGS+=( -DDRMARIO_REGION="$REGION" )
+DEBUG_CMAKE_FLAGS+=( -DDRMARIO_REGION="$REGION" )
 case "$CONFIG" in prod) FLAGS=( "${PROD_CMAKE_FLAGS[@]}" );; debug) FLAGS=( "${DEBUG_CMAKE_FLAGS[@]}" );;
   *) echo "--config must be prod or debug (got '$CONFIG')" >&2; exit 2;; esac
 
@@ -91,7 +99,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-BUILD="$REPO/build-linux-$CONFIG"
+BUILD="$REPO/build-linux-$CONFIG-$REGION"
 echo "==================== $APP_NAME ($CONFIG) ===================="
 cd "$REPO"
 
@@ -168,6 +176,7 @@ EOF
 
 $LINUXDEPLOY --appdir "$APPDIR" --executable "$BIN" \
     --desktop-file "$WORK/$SLUG.desktop" --icon-file "$WORK/$SLUG.png"
+cp -a "$(dirname "$BIN")/assets" "$APPDIR/usr/bin/assets"
 
 # Custom AppRun: bundle libs, read the controller natively on a Steam Deck, find
 # the ROM next to the .AppImage, run from the ROM's folder so saves land there.
@@ -183,10 +192,16 @@ export SDL_GAMECONTROLLER_ALLOW_STEAM_VIRTUAL_GAMEPAD=1
 SELF="\${APPIMAGE:-\$0}"
 ROMDIR="\$(dirname "\$(readlink -f "\$SELF")")"
 ROM=""
+ROM_COUNT=0
 for ext in $ROM_EXTS; do
     [ "\$ext" = "none" ] && break
-    for f in "\$ROMDIR"/*."\$ext"; do [ -e "\$f" ] && ROM="\$f" && break 2; done
+    for f in "\$ROMDIR"/*."\$ext"; do
+        [ -e "\$f" ] || continue
+        ROM="\$f"
+        ROM_COUNT=\$((ROM_COUNT + 1))
+    done
 done
+[ "\$ROM_COUNT" -eq 1 ] || ROM=""
 cd "\$ROMDIR" 2>/dev/null || true
 if [ "\$#" -eq 0 ]; then
     [ -n "\$ROM" ] && exec "\$HERE/usr/bin/$EXE" "\$ROM"

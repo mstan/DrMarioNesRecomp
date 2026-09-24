@@ -1,85 +1,77 @@
-<#
-make_release.ps1 -- build the Windows release zip for DrMarioNesRecomp.
-
-Ships ONE windows zip (never a bare exe -- the exe needs SDL2.dll and the
-launcher/ assets):
-
-  DrMarioRecomp-windows-x64.zip
-      DrMarioRecomp.exe + SDL2.dll + keybinds.ini + launcher/ + launcher-deps/ + README.txt
-
-Builds build_release\ via build_all.bat (plain regen, oracle OFF, reverse-debug
-OFF) when present, then stages and zips. The zip lands in release\ (gitignored)
-and never contains debug.ini, config.ini, a ROM, saves, or logs.
-
-Publish AFTER smoke-testing the zip from a scratch directory:
-
-  gh release create vX.Y.Z release\DrMarioRecomp-windows-x64.zip `
-      --title "vX.Y.Z -- <headline>" --notes-file RELEASE_NOTES.md
-
-Usage: powershell -File tools\make_release.ps1 [-SkipBuild]
-#>
+# Build and package ROM-free Windows releases for both Dr. Mario regions.
 param(
+  [ValidateSet('usa','eu','both')][string]$Region = 'both',
   [switch]$SkipBuild
 )
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
-$bin  = Join-Path $root 'build_release'
-$out  = Join-Path $root 'release'
-New-Item -ItemType Directory -Force $out | Out-Null
+$out = Join-Path $root 'release'
+$cmake = 'C:\Program Files\CMake\bin\cmake.exe'
+if (-not (Test-Path -LiteralPath $cmake)) {
+  $cmake = (Get-Command cmake.exe -ErrorAction Stop).Source
+}
+New-Item -ItemType Directory -Path $out -Force | Out-Null
 
-if (-not $SkipBuild) {
-  $buildAll = Join-Path $root 'build_all.bat'
-  if (Test-Path $buildAll) {
-    & cmd /c $buildAll
-    if ($LASTEXITCODE -ne 0) { throw "build_all.bat failed ($LASTEXITCODE)" }
-  } else {
-    Write-Host "no build_all.bat; staging the existing build_release\ (pass -SkipBuild to silence)"
+$regions = if ($Region -eq 'both') { @('usa','eu') } else { @($Region) }
+foreach ($variant in $regions) {
+  $build = Join-Path $root "build-release-$variant"
+  if (-not $SkipBuild) {
+    $ErrorActionPreference = 'Continue' # MSVC/CMake send harmless warnings to stderr.
+    try {
+      & $cmake -S $root -B $build -G 'Visual Studio 17 2022' -A x64 "-DDRMARIO_REGION=$variant" -DNESRECOMP_ENABLE_TRACE=OFF -Wno-deprecated
+      $configureExit = $LASTEXITCODE
+      if ($configureExit -ne 0) { throw "CMake configure failed for $variant" }
+      & $cmake --build $build --config Release --parallel 8
+      $buildExit = $LASTEXITCODE
+      if ($buildExit -ne 0) { throw "CMake build failed for $variant" }
+    } finally {
+      $ErrorActionPreference = 'Stop'
+    }
   }
+  $bin = Join-Path $build 'Release'
+  $exe = Join-Path $bin 'DrMarioRecomp.exe'
+  if (-not (Test-Path -LiteralPath $exe)) { throw "Missing $exe" }
+
+  $stage = Join-Path $out "stage-$variant"
+  $resolvedOut = [IO.Path]::GetFullPath($out).TrimEnd('\')
+  $resolvedStage = [IO.Path]::GetFullPath($stage)
+  if (-not $resolvedStage.StartsWith($resolvedOut + '\', [StringComparison]::OrdinalIgnoreCase)) {
+    throw "Unsafe staging path: $stage"
+  }
+  if (Test-Path -LiteralPath $stage) { Remove-Item -LiteralPath $stage -Recurse -Force }
+  New-Item -ItemType Directory -Path $stage | Out-Null
+  Copy-Item -LiteralPath $exe -Destination $stage
+  $sdl = Join-Path $bin 'SDL2.dll'
+  $assets = Join-Path $bin 'assets'
+  if (-not (Test-Path -LiteralPath $sdl) -or -not (Test-Path -LiteralPath $assets)) {
+    throw "Release dependencies missing from $bin"
+  }
+  Copy-Item -LiteralPath $sdl -Destination $stage
+  Copy-Item -LiteralPath $assets -Destination $stage -Recurse
+  $crc = if ($variant -eq 'usa') { 'DE581355' } else { '9735D267' }
+  @"
+Dr. Mario ($variant) - NESRecomp
+===============================
+This build requires a Dr. Mario ROM with headerless CRC32 $crc.
+No ROM is included. Select your own ROM at first launch.
+Arrow keys: move; Z: A; X: B; Enter: Start; F5: turbo;
+F6: save state; F7: load state. Controller bindings are configurable.
+"@ | Set-Content -LiteralPath (Join-Path $stage 'README.txt') -Encoding Ascii
+
+  $zip = Join-Path $out "DrMarioRecomp-$variant-windows-x64.zip"
+  if (Test-Path -LiteralPath $zip) { Remove-Item -LiteralPath $zip -Force }
+  Add-Type -AssemblyName System.IO.Compression
+  Add-Type -AssemblyName System.IO.Compression.FileSystem
+  $archive = [IO.Compression.ZipFile]::Open($zip, [IO.Compression.ZipArchiveMode]::Create)
+  try {
+    foreach ($file in Get-ChildItem -LiteralPath $stage -Recurse -File) {
+      $entry = $file.FullName.Substring($resolvedStage.Length + 1).Replace('\', '/')
+      [IO.Compression.ZipFileExtensions]::CreateEntryFromFile(
+        $archive, $file.FullName, $entry, [IO.Compression.CompressionLevel]::Optimal) | Out-Null
+    }
+  } finally {
+    $archive.Dispose()
+  }
+  Remove-Item -LiteralPath $stage -Recurse -Force
+  Write-Host "Built $zip"
 }
-
-$exe = Join-Path $bin 'DrMarioRecomp.exe'
-if (-not (Test-Path $exe)) { throw "missing $exe -- build the game first (build_all.bat, or cmake --build build_release)" }
-
-$readme = @'
-Dr. Mario - Static Recompilation
-================================
-
-A native PC build of Dr. Mario, produced by statically recompiling the NES
-ROM's 6502 code to C with the NESRecomp framework (github.com/mstan/nesrecomp).
-
-No ROM is included. On first launch, select your legally-obtained Dr. Mario
-ROM. The path is remembered for future launches.
-
-Controls: arrow keys = D-Pad, Z = A, X = B, Enter = Start, Right Shift = Select.
-F5 turbo, F6 save state, F7 load state, F11 / Alt+Enter fullscreen. Gamepads are
-supported; bindings are configurable in keybinds.ini.
-'@
-
-$stage = Join-Path $out 'stage'
-if (Test-Path $stage) { Remove-Item -Recurse -Force $stage }
-New-Item -ItemType Directory -Force $stage | Out-Null
-
-Copy-Item $exe $stage
-foreach ($extra in 'SDL2.dll', 'keybinds.ini') {
-  $p = Join-Path $bin $extra
-  if (Test-Path $p) { Copy-Item $p $stage }
-}
-foreach ($dir in 'launcher') {
-  $p = Join-Path $bin $dir
-  if (Test-Path $p) { Copy-Item -Recurse $p (Join-Path $stage $dir) }
-}
-
-$readme | Out-File -Encoding ascii (Join-Path $stage 'README.txt')
-
-# Belt-and-braces: never ship debug/dev artifacts, a ROM, saves, or logs.
-foreach ($banned in 'debug.ini', 'config.ini', 'rom.cfg', 'dispatch_misses.log') {
-  $p = Join-Path $stage $banned
-  if (Test-Path $p) { Remove-Item $p }
-}
-Get-ChildItem $stage -Recurse -Include '*.nes','*.NES','*.srm','*.sav' -ErrorAction SilentlyContinue | Remove-Item -Force
-
-$zip = Join-Path $out 'DrMarioRecomp-windows-x64.zip'
-if (Test-Path $zip) { Remove-Item $zip }
-Compress-Archive -Path (Join-Path $stage '*') -DestinationPath $zip
-Remove-Item -Recurse -Force $stage
-Write-Host "staged $zip"

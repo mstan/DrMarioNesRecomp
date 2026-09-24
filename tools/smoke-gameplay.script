@@ -1,0 +1,25 @@
+# Title -> options -> one-player gameplay; exercise pill movement/rotation.
+WAIT 120
+HOLD START
+WAIT 2
+RELEASE START
+WAIT 90
+SCREENSHOT dr-mario-options.png
+HOLD START
+WAIT 2
+RELEASE START
+WAIT 180
+SCREENSHOT dr-mario-gameplay.png
+HOLD LEFT
+WAIT 10
+RELEASE LEFT
+HOLD A
+WAIT 2
+RELEASE A
+HOLD RIGHT
+WAIT 15
+RELEASE RIGHT
+HOLD DOWN
+WAIT 40
+RELEASE DOWN
+WAIT 400

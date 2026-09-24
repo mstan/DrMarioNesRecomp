@@ -17,15 +17,19 @@ import {
   writeFileSync,
   readdirSync,
   statSync,
+  mkdtempSync,
+  rmSync,
 } from "fs";
 import { join, resolve, dirname } from "path";
 import { createHash } from "crypto";
+import { tmpdir } from "os";
 
 // ── Paths (all relative to game repo root) ──────────────────────────────────
 
 const TESTS_DIR = import.meta.dirname;
 const GAME_ROOT = resolve(TESTS_DIR, "..");
 const CONFIG: {
+  region: "eu" | "usa";
   romSha256: string;
   smokeFrames: number;
   smokeInterval: number;
@@ -38,6 +42,10 @@ const NESRECOMP_EXE = resolve(
   GAME_ROOT,
   "nesrecomp/build/recompiler/Release/NESRecomp.exe"
 );
+const BUILD_DIR = join(GAME_ROOT, `build-regression-${CONFIG.region}`);
+const CMAKE_EXE = existsSync("C:/Program Files/CMake/bin/cmake.exe")
+  ? "C:/Program Files/CMake/bin/cmake.exe"
+  : "cmake";
 
 // Find MSBuild — check common locations
 const MSBUILD_CANDIDATES = [
@@ -69,13 +77,13 @@ function findRom(): string | null {
 }
 
 function findToml(): string {
-  const toml = join(GAME_ROOT, "game.toml");
+  const toml = join(GAME_ROOT, CONFIG.region === "usa" ? "game-usa.toml" : "game.toml");
   if (existsSync(toml)) return toml;
   throw new Error(`game.toml not found in ${GAME_ROOT}`);
 }
 
 function findSln(): string {
-  const buildDir = join(GAME_ROOT, "build");
+  const buildDir = BUILD_DIR;
   if (!existsSync(buildDir)) throw new Error(`build/ not found in ${GAME_ROOT}`);
   const slns = readdirSync(buildDir).filter((f) => f.endsWith(".sln"));
   if (slns.length === 0) throw new Error(`No .sln found in ${buildDir}`);
@@ -83,7 +91,7 @@ function findSln(): string {
 }
 
 function findExe(): string {
-  const releaseDir = join(GAME_ROOT, "build/Release");
+  const releaseDir = join(BUILD_DIR, "Release");
   if (!existsSync(releaseDir))
     throw new Error(`build/Release/ not found in ${GAME_ROOT}`);
   const exes = readdirSync(releaseDir).filter((f) => f.endsWith(".exe"));
@@ -127,13 +135,30 @@ function countDispatchEntries(): number {
 }
 
 function regen(romPath: string): number {
-  const stderr = execFileSync(NESRECOMP_EXE, [romPath, "--game", findToml()], {
-    cwd: GAME_ROOT,
-    timeout: 120_000,
-    maxBuffer: 50 * 1024 * 1024,
-    encoding: "utf-8",
-    stdio: ["pipe", "pipe", "pipe"],
-  });
+  if (!existsSync(NESRECOMP_EXE)) {
+    execFileSync(CMAKE_EXE, ["-S", join(GAME_ROOT, "nesrecomp/recompiler"),
+      "-B", join(GAME_ROOT, "nesrecomp/build/recompiler"),
+      "-G", "Visual Studio 17 2022", "-A", "x64"], { cwd: GAME_ROOT });
+    execFileSync(CMAKE_EXE, ["--build", join(GAME_ROOT, "nesrecomp/build/recompiler"),
+      "--config", "Release"], { cwd: GAME_ROOT });
+  }
+  const scratch = mkdtempSync(join(tmpdir(), `dr-mario-${CONFIG.region}-regen-`));
+  let stderr: string;
+  try {
+    stderr = execFileSync(NESRECOMP_EXE, [romPath, "--game", findToml()], {
+      cwd: scratch,
+      timeout: 120_000,
+      maxBuffer: 50 * 1024 * 1024,
+      encoding: "utf-8",
+      stdio: ["pipe", "pipe", "pipe"],
+    });
+  } finally {
+    if (!scratch.startsWith(resolve(tmpdir()) + "\\") &&
+        !scratch.startsWith(resolve(tmpdir()) + "/")) {
+      throw new Error(`Unsafe temporary output path: ${scratch}`);
+    }
+    rmSync(scratch, { recursive: true, force: true });
+  }
   // Function count is printed to stdout (captured in stderr due to merge)
   const combined = stderr.toString();
   const match = combined.match(/Found (\d+) functions/);
@@ -141,6 +166,9 @@ function regen(romPath: string): number {
 }
 
 function build(): void {
+  execFileSync(CMAKE_EXE, ["-S", GAME_ROOT, "-B", BUILD_DIR,
+    "-G", "Visual Studio 17 2022", "-A", "x64",
+    `-DDRMARIO_REGION=${CONFIG.region}`], { cwd: GAME_ROOT });
   const sln = findSln();
   execFileSync(MSBUILD_EXE, [sln, "-p:Configuration=Release", "-m"], {
     cwd: GAME_ROOT,

@@ -4,6 +4,20 @@ project(DrMarioRecomp C CXX)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
 
+set(DRMARIO_REGION "usa" CACHE STRING "Dr. Mario ROM region (usa or eu)")
+set_property(CACHE DRMARIO_REGION PROPERTY STRINGS usa eu)
+if(DRMARIO_REGION STREQUAL "usa")
+    set(DRMARIO_PREFIX "dr-mario-usa")
+    set(DRMARIO_CRC 0xDE581355)
+elseif(DRMARIO_REGION STREQUAL "eu")
+    set(DRMARIO_PREFIX "dr-mario")
+    set(DRMARIO_CRC 0x9735D267)
+else()
+    message(FATAL_ERROR "DRMARIO_REGION must be usa or eu")
+endif()
+
+file(GLOB DRMARIO_PARTS CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/generated/${DRMARIO_PREFIX}_full_bank*_part*.c")
+
 set(NESRECOMP_ROOT ${CMAKE_SOURCE_DIR}/nesrecomp)
 
 # nesrecomp/ and recomp-ui/ are git submodules (see .gitmodules); the pinned
@@ -18,8 +32,15 @@ find_package(SDL2 REQUIRED)
 add_executable(DrMarioRecomp
     ${NESRECOMP_RUNNER_SOURCES}
     extras.c
-    generated/dr-mario_full.c
-    generated/dr-mario_dispatch.c
+    generated/${DRMARIO_PREFIX}_full.c
+    generated/${DRMARIO_PREFIX}_dispatch.c
+    ${DRMARIO_PARTS}
+)
+
+target_compile_definitions(DrMarioRecomp PRIVATE
+    NESRECOMP_SPLIT_PARTS_EXTERNAL
+    DRMARIO_EXPECTED_CRC=${DRMARIO_CRC}
+    DRMARIO_REGION_NAME="${DRMARIO_REGION}"
 )
 
 target_include_directories(DrMarioRecomp PRIVATE

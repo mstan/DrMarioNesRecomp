@@ -1,0 +1,27 @@
+# Dr. Mario (Japan, USA) Rev 1. Keep region-specific addresses out of the EU config.
+[game]
+name = "Dr. Mario (USA Rev 1)"
+output_prefix = "dr-mario-usa"
+disable_secondary = true
+
+# The shared bank-0 routines in Rev 1 moved by $11 from the EU ROM.
+[mapper]
+bank_switch = [0xB8E6]
+
+[[inline_dispatch]]
+addr = 0xB8C6
+
+[[inline_pointer]]
+addr = 0xB6DC
+zp = [0x00, 0x01]
+call = true
+
+[[nop_jsr]]
+addr = 0xB765
+
+[[extra_label]]
+addr = 0xB6E2
+bank = 0
+
+[functions]
+fixed = [0xDDAD, 0xDD14, 0xD88D, 0xD8E7, 0xD877]

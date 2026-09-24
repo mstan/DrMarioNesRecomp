@@ -1,6 +1,6 @@
 {
-  "function_count": 1790,
-  "dispatch_entry_count": 1789,
+  "function_count": 2446,
+  "dispatch_entry_count": 2145,
   "smoke": {
     "frames_run": 600,
     "dispatch_miss_count": 0,

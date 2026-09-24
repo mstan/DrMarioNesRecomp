@@ -1,4 +1,13 @@
 build/
+build-*/
+release/
+release-linux/
+*.log
+smoke-*.json
+fuzz-*.json
+fuzz-*.script
+dr-mario-usa_auto_entries.csv
+dr-mario-usa_finder_audit.csv
 banks/
 ghidra/
 *.nes

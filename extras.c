@@ -5,7 +5,9 @@
 #include "game_extras.h"
 #include "nes_runtime.h"
 #include "debug_server.h"
+#include "crc32.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 /* Globals expected by the runner framework */
@@ -14,11 +16,41 @@ int         g_watchdog_triggered  = 0;
 uint32_t    g_watchdog_frame      = 0;
 const char *g_watchdog_stack_dump = "";
 
-uint32_t game_get_expected_crc32(void) { return 0x9735D267u; }
+uint32_t game_get_expected_crc32(void) { return DRMARIO_EXPECTED_CRC; }
 
-const char *game_get_name(void) { return "Dr. Mario"; }
+const char *game_get_name(void) { return "Dr. Mario (" DRMARIO_REGION_NAME ")"; }
 
 void game_on_init(void) {
+    /* The common launcher warns but continues for positional ROM arguments.
+     * Stop that path before mismatched generated code can execute. */
+    FILE *rom = g_rom_path_for_extras ? fopen(g_rom_path_for_extras, "rb") : NULL;
+    if (!rom || fseek(rom, 0, SEEK_END) != 0) {
+        fprintf(stderr, "[DrMario] Cannot verify ROM\n");
+        if (rom) fclose(rom);
+        exit(1);
+    }
+    long size = ftell(rom);
+    if (size <= 16 || fseek(rom, 16, SEEK_SET) != 0) {
+        fprintf(stderr, "[DrMario] Invalid ROM file\n");
+        fclose(rom);
+        exit(1);
+    }
+    size_t data_size = (size_t)size - 16;
+    uint8_t *data = (uint8_t *)malloc(data_size);
+    if (!data || fread(data, 1, data_size, rom) != data_size) {
+        fprintf(stderr, "[DrMario] Cannot read ROM\n");
+        free(data);
+        fclose(rom);
+        exit(1);
+    }
+    fclose(rom);
+    uint32_t actual = crc32_compute(data, data_size);
+    free(data);
+    if (actual != game_get_expected_crc32()) {
+        fprintf(stderr, "[DrMario] Wrong ROM for %s: expected %08X, got %08X\n",
+                game_get_name(), game_get_expected_crc32(), actual);
+        exit(1);
+    }
     debug_server_init(4370);
 }
 

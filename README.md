@@ -28,9 +28,12 @@ Function coverage and game logic analysis made possible by the [dr-mario-disasse
 
 ## Quick Start
 
-1. Download `DrMarioNesRecomp-windows-x64.zip` from [Releases](../../releases)
+1. Download the `usa` or `eu` Windows ZIP from [Releases](../../releases), matching your ROM
 2. Extract and run `DrMarioRecomp.exe`
-3. Select your Dr. Mario (USA) ROM when prompted — the path is saved for future launches
+3. Select your matching Dr. Mario ROM when prompted — the path is saved for future launches
+
+Linux users can run the matching `DrMario-usa-x86_64.AppImage` or
+`DrMario-eu-x86_64.AppImage`. No ROM is included in any release asset.
 
 ## Controls
 
@@ -83,14 +86,19 @@ chmod +x setup.sh && ./setup.sh
 This initializes the pinned [nesrecomp](https://github.com/mstan/nesrecomp)
 submodule and links the Nestopia oracle core.
 
-Then build:
+The committed generated sources support two independent variants. Build either
+one by selecting its region at CMake configure time:
 
 ```bash
-cmake -S . -B build -G "Visual Studio 17 2022" -A x64
-cmake --build build --config Release
+cmake -S . -B build-usa -G "Visual Studio 17 2022" -A x64 -DDRMARIO_REGION=usa
+cmake --build build-usa --config Release
+cmake -S . -B build-eu -G "Visual Studio 17 2022" -A x64 -DDRMARIO_REGION=eu
+cmake --build build-eu --config Release
 ```
 
-Place your `Dr. Mario (USA).nes` ROM in the build directory or select it at runtime.
+Select a matching ROM at runtime. Release packages and source control contain
+no ROM. `tools/make_release.ps1` builds both Windows ZIPs;
+`tools/build-all-linux.sh` builds both Linux AppImages on Linux.
 
 ### Regenerating from ROM
 
@@ -100,17 +108,19 @@ cmake -S nesrecomp/recompiler -B nesrecomp/build/recompiler -G "Visual Studio 17
 cmake --build nesrecomp/build/recompiler --config Release
 
 # Generate C code from ROM
-nesrecomp/build/recompiler/Release/NESRecomp.exe "Dr. Mario (USA).nes" --game game.toml
+nesrecomp/build/recompiler/Release/NESRecomp.exe "Dr. Mario (Europe).nes" --game game.toml
+nesrecomp/build/recompiler/Release/NESRecomp.exe "Dr. Mario (Japan, USA) (Rev 1).nes" --game game-usa.toml
 
 # Build the game
-cmake --build build --config Release
+cmake --build build-usa --config Release
+cmake --build build-eu --config Release
 ```
 
 ## Architecture
 
 This is a **static recompiler**, not an emulator. The original 6502 machine code is translated to C at build time, then compiled to native x64. The NES PPU, APU, and mapper are simulated by the runner library.
 
-- `game.toml` — recompiler configuration (TOML format, inspired by N64Recomp)
+- `game.toml` and `game-usa.toml` — region-specific recompiler configurations
 - `game.cfg` — legacy configuration (same directives, text format)
 - `extras.c` — game-specific hooks (CRC32 verification, debug server)
 - `generated/` — auto-generated C code (do not edit manually)
@@ -121,7 +131,11 @@ This is a **static recompiler**, not an emulator. The original 6502 machine code
 
 | ROM | CRC32 | Status |
 |-----|-------|--------|
-| Dr. Mario (USA) | `0x9735D267` | Supported |
+| Dr. Mario (Europe) | `0x9735D267` | EU build |
+| Dr. Mario (Japan, USA) (Rev 1) | `0xDE581355` | USA build |
+
+These CRCs exclude the 16-byte iNES header. The EU generated code remains
+under `generated/dr-mario_*`; the USA code is under `generated/dr-mario-usa_*`.
 
 ## Known Limitations
 
