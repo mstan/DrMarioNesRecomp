@@ -50,7 +50,7 @@ Both region builds default to cycle mode and retain `NESRECOMP_BACKEND=legacy`.
 Use separate build directories and each variant's matching original ROM.
 The PAL branch passed 1,800-frame native/interpreter comparison at all five
 alignments, independent Mesen gameplay RAM and picture checks, state restoration,
-and window/shortcut/pacing checks. The EU owner playtest is pending. The old build examples below describe the legacy
+and window/shortcut/pacing checks. The owner accepted the EU PAL playtest on 2026-10-04. The old build examples below describe the legacy
 backend and need `-DNESRECOMP_BACKEND=legacy`.
 
 ## Acknowledgments
