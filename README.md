@@ -44,10 +44,13 @@ menu/input/save-state behavior; other platforms and full-game completion have
 not been validated by this migration.
 
 The USA cycle target uses `DRMARIO_REGION=usa` and the Japan/USA Rev 1 (Rev A)
-ROM, headerless CRC32 `DE581355`. The existing European ROM (`9735D267`) stays
-available with `DRMARIO_REGION=eu` and `NESRECOMP_BACKEND=legacy` while PAL cycle
-timing is ported. Both NA and EU releases remain in scope; do not package the EU
-ROM through NTSC cycle timing. The old build examples below describe the legacy
+ROM, headerless CRC32 `DE581355`, at NTSC timing. The European ROM (`9735D267`)
+uses `DRMARIO_REGION=eu` with proper PAL CPU/PPU/APU clocks and about 50.007 fps.
+Both region builds default to cycle mode and retain `NESRECOMP_BACKEND=legacy`.
+Use separate build directories and each variant's matching original ROM.
+The PAL branch passed 1,800-frame native/interpreter comparison at all five
+alignments, independent Mesen gameplay RAM and picture checks, state restoration,
+and window/shortcut/pacing checks. The EU owner playtest is pending. The old build examples below describe the legacy
 backend and need `-DNESRECOMP_BACKEND=legacy`.
 
 ## Acknowledgments

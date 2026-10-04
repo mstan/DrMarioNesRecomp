@@ -28,21 +28,30 @@ set(NESRECOMP_BACKEND "cycle" CACHE STRING "CPU backend: cycle or legacy")
 set_property(CACHE NESRECOMP_BACKEND PROPERTY STRINGS cycle legacy)
 if(NESRECOMP_BACKEND STREQUAL "cycle")
     set(NESRECOMP_ROM "" CACHE FILEPATH "ROM image to recompile (not distributed)")
-    set(NESRECOMP_CYCLE_SEEDS "${CMAKE_CURRENT_SOURCE_DIR}/cyc_seeds.txt" CACHE FILEPATH "Cycle coverage seeds")
+    if(DRMARIO_REGION STREQUAL "eu")
+        set(DRMARIO_DEFAULT_SEEDS "cyc_seeds_eu.txt")
+    else()
+        set(DRMARIO_DEFAULT_SEEDS "cyc_seeds.txt")
+    endif()
+    set(NESRECOMP_CYCLE_SEEDS "${CMAKE_CURRENT_SOURCE_DIR}/${DRMARIO_DEFAULT_SEEDS}" CACHE FILEPATH "Cycle coverage seeds")
     set(NESRECOMP_HOST_COMPILER "" CACHE FILEPATH "Optional prebuilt host NESRecomp compiler")
     if(NOT EXISTS "${NESRECOMP_ROM}")
         message(FATAL_ERROR "Set NESRECOMP_ROM to the original ROM image for this title")
     endif()
     if(DRMARIO_REGION STREQUAL "eu")
-        message(FATAL_ERROR "European cycle timing is pending; use NESRECOMP_BACKEND=legacy for the existing EU build")
+        set(DRMARIO_CYCLE_CONFIG "game.toml")
+        set(DRMARIO_CYCLE_TIMING PAL)
+    else()
+        set(DRMARIO_CYCLE_CONFIG "game-usa.toml")
+        set(DRMARIO_CYCLE_TIMING NTSC)
     endif()
-    set(DRMARIO_CYCLE_CONFIG "game-usa.toml")
     include("${NESRECOMP_ROOT}/runner/cyc/project.cmake")
     nesrecomp_add_cycle_game(DrMarioRecomp
         ROM "${NESRECOMP_ROM}"
         GAME_CONFIG "${CMAKE_CURRENT_SOURCE_DIR}/${DRMARIO_CYCLE_CONFIG}"
         RECOMPILER "${NESRECOMP_HOST_COMPILER}"
         SEED_FILE "${NESRECOMP_CYCLE_SEEDS}"
+        REGION ${DRMARIO_CYCLE_TIMING}
         PLAYERS 2
         BOXART "${CMAKE_CURRENT_SOURCE_DIR}/boxart.tga")
     return()

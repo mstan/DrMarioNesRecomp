@@ -4,6 +4,8 @@
 name = "Dr. Mario"
 output_prefix = "dr-mario"
 
+disable_secondary = true
+
 [mapper]
 bank_switch = [0xB8D5]
 
