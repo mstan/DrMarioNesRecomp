@@ -99,6 +99,12 @@ cleanup() {
 }
 trap cleanup EXIT
 
+FLAGS+=( -DNESRECOMP_BACKEND=cycle )
+ROM="${NESRECOMP_ROM:-}"
+if [ "$REGION" = usa ]; then ROM="${NESRECOMP_USA_ROM:-$ROM}"; else ROM="${NESRECOMP_EU_ROM:-$ROM}"; fi
+[ -n "$ROM" ] || { echo "Supply the original region ROM with NESRECOMP_ROM." >&2; exit 2; }
+FLAGS+=( "-DNESRECOMP_ROM=$ROM" )
+
 BUILD="$REPO/build-linux-$CONFIG-$REGION"
 echo "==================== $APP_NAME ($CONFIG) ===================="
 cd "$REPO"

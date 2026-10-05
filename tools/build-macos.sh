@@ -34,6 +34,7 @@ BUNDLE_ID="com.mstan.drmariorecomp"
 # ============================================================================
 
 CONFIG="prod"; DO_REGEN=0; DO_DMG=1
+REGION="${DRMARIO_REGION:-usa}"
 ARCH="$(uname -m)"   # arm64 on Apple Silicon, x86_64 on Intel
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
 OUT="$REPO/release-macos"
@@ -41,6 +42,7 @@ OUT="$REPO/release-macos"
 while [ $# -gt 0 ]; do
   case "$1" in
     --config) CONFIG="$2"; shift 2;;
+    --region) REGION="$2"; shift 2;;
     --prod) CONFIG="prod"; shift;;
     --debug) CONFIG="debug"; shift;;
     --regen) DO_REGEN=1; shift;;
@@ -61,7 +63,16 @@ case "$ARCH" in
   *) echo "--arch must be arm64, x86_64, or universal" >&2; exit 2;;
 esac
 
-BUILD="$REPO/build-macos-$CONFIG"
+FLAGS+=( -DNESRECOMP_BACKEND=cycle )
+case "$REGION" in usa|eu) ;; *) echo "--region must be usa or eu" >&2; exit 2;; esac
+FLAGS+=( "-DDRMARIO_REGION=$REGION" )
+APP_NAME="DrMario-$REGION"
+ROM="${NESRECOMP_ROM:-}"
+if [ "$REGION" = usa ]; then ROM="${NESRECOMP_USA_ROM:-$ROM}"; else ROM="${NESRECOMP_EU_ROM:-$ROM}"; fi
+[ -n "$ROM" ] || { echo "Supply the original region ROM with NESRECOMP_ROM." >&2; exit 2; }
+FLAGS+=( "-DNESRECOMP_ROM=$ROM" )
+
+BUILD="$REPO/build-macos-$CONFIG-$REGION"
 echo "==================== $APP_NAME ($CONFIG, $ARCH) ===================="
 cd "$REPO"
 
@@ -90,6 +101,8 @@ mkdir -p "$APPDIR/Contents/MacOS" "$APPDIR/Contents/Resources" "$APPDIR/Contents
 # The real game binary lives next to a launcher that finds the ROM in the same
 # folder as the .app and runs from there (so saves land beside the .app).
 cp "$BIN" "$APPDIR/Contents/MacOS/$CMAKE_TARGET"
+[ -d "$(dirname "$BIN")/assets" ] || { echo "ERROR: launcher assets missing" >&2; exit 1; }
+cp -R "$(dirname "$BIN")/assets" "$APPDIR/Contents/MacOS/assets"
 cat > "$APPDIR/Contents/MacOS/$APP_NAME" <<EOF
 #!/bin/sh
 DIR="\$(cd "\$(dirname "\$0")" && pwd)"
